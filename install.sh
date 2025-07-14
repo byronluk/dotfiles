@@ -172,8 +172,6 @@ setup_git_config() {
         return
     fi
     
-    log "Setting up git configuration..."
-    
     # Use provided values or prompt for them
     if [[ -z "$DOTFILES_GIT_NAME" ]]; then
         if [[ "$DOTFILES_QUIET" != "true" ]]; then
@@ -191,15 +189,13 @@ setup_git_config() {
         fi
     fi
     
-    # Create git config from template
-    sed -e "s/DOTFILES_GIT_NAME/$DOTFILES_GIT_NAME/g" \
-        -e "s/DOTFILES_GIT_EMAIL/$DOTFILES_GIT_EMAIL/g" \
-        "$DOTFILES_DIR/git/.gitconfig" > "$HOME/.gitconfig"
+    # Export variables for setup script
+    export DOTFILES_GIT_NAME
+    export DOTFILES_GIT_EMAIL
     
-    # Copy global gitignore
-    cp "$DOTFILES_DIR/git/.gitignore_global" "$HOME/.gitignore_global"
-    
-    log_success "Git configuration complete"
+    # Use dedicated git setup script
+    source "$DOTFILES_DIR/scripts/setup-git.sh"
+    setup_git
 }
 
 # Setup SSH configuration

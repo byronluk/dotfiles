@@ -1,0 +1,39 @@
+# Sensitive files
+.env*
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+known_hosts*
+authorized_keys*
+
+# Personal configurations
+.zshrc.local
+.bashrc.local
+.profile.local
+
+# API keys and tokens
+*token*
+*secret*
+*credential*
+*password*
+config/credentials*
+
+# Cloud provider configs
+.aws/credentials
+.azure/credentials
+.gcloud/credentials
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+*~
+.DS_Store
+
+# Logs
+*.log

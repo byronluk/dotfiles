@@ -177,7 +177,7 @@ setup_git_config() {
         if [[ "$DOTFILES_QUIET" != "true" ]]; then
             read -p "Enter your git name: " DOTFILES_GIT_NAME
         else
-            DOTFILES_GIT_NAME="User"
+            DOTFILES_GIT_NAME="Byron Luk"
         fi
     fi
     
@@ -185,7 +185,7 @@ setup_git_config() {
         if [[ "$DOTFILES_QUIET" != "true" ]]; then
             read -p "Enter your git email: " DOTFILES_GIT_EMAIL
         else
-            DOTFILES_GIT_EMAIL="user@example.com"
+            DOTFILES_GIT_EMAIL="byronluk@gmail.com"
         fi
     fi
     

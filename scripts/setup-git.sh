@@ -6,7 +6,7 @@ setup_git() {
     
     # Use provided name and email or defaults
     local git_name="${DOTFILES_GIT_NAME:-Byron Luk}"
-    local git_email="${DOTFILES_GIT_EMAIL:-byron.luk@gmail.com}"
+    local git_email="${DOTFILES_GIT_EMAIL:-byronluk@gmail.com}"
     
     # Configure git
     git config --global user.name "$git_name"

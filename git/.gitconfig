@@ -1,0 +1,49 @@
+# Git configuration template
+[user]
+	name = DOTFILES_GIT_NAME
+	email = DOTFILES_GIT_EMAIL
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+[pull]
+	rebase = true
+
+[rebase]
+	autoStash = true
+
+[core]
+	excludesfile = ~/.gitignore_global
+	editor = code --wait
+
+[alias]
+	tags-grouped = "!f() { prefix_filter=\"$1\"; git tag -n | sort | awk -v filter=\"$prefix_filter\" 'BEGIN { current_prefix = \"\"; current_type = \"\" } { split($1, parts, \"-\"); prefix = parts[1]; if (filter != \"\" && prefix != filter) next; if (index($1, \"-begin\") > 0) type = \"begin\"; else if (index($1, \"-end\") > 0) type = \"end\"; else type = \"other\"; if (prefix != current_prefix) { if (current_prefix != \"\") print \"\"; print prefix \":\"; current_prefix = prefix; current_type = \"\" } if (type != current_type) { print \"  \" type \":\"; current_type = type } print \"    \" $0 }';}; f"
+	st = status
+	co = checkout
+	br = branch
+	ci = commit
+	ca = commit -a
+	cp = cherry-pick
+	df = diff
+	dc = diff --cached
+	lg = log --oneline --graph --decorate
+	lol = log --graph --decorate --pretty=oneline --abbrev-commit
+	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+	ls = ls-files
+	ign = ls-files -o -i --exclude-standard
+
+[diff]
+	tool = vimdiff
+
+[difftool]
+	prompt = false
+
+[init]
+	defaultBranch = main
+
+[push]
+	default = simple
+	autoSetupRemote = true

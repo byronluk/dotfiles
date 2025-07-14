@@ -132,6 +132,11 @@ alias dstop='docker stop'
 alias dstart='docker start'
 alias dexec='docker exec -it'
 
+# Dotfiles management
+alias dotfiles="cd ~/.dotfiles && git status"
+alias dotupdate="~/.dotfiles/update.sh"
+alias dotcheck="~/.dotfiles/update.sh --check"
+
 # DevContainer aliases
 alias dcbuild='devcontainer build --workspace-folder .'
 alias dcup='devcontainer up --workspace-folder .'

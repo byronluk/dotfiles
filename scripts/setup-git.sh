@@ -17,8 +17,8 @@ setup_git() {
         cp "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
         
         # Replace placeholders with actual values
-        sed -i.bak "s/YOUR_NAME/$git_name/g" "$HOME/.gitconfig"
-        sed -i.bak "s/YOUR_EMAIL/$git_email/g" "$HOME/.gitconfig"
+        sed -i.bak "s/DOTFILES_GIT_NAME/$git_name/g" "$HOME/.gitconfig"
+        sed -i.bak "s/DOTFILES_GIT_EMAIL/$git_email/g" "$HOME/.gitconfig"
         rm "$HOME/.gitconfig.bak"
     fi
     

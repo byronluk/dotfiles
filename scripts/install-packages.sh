@@ -61,7 +61,8 @@ install_package() {
         "apt")
             if ! dpkg -l | grep -q "^ii  $package "; then
                 log "Installing $package with apt..."
-                if ! sudo apt-get update -qq && sudo apt-get install -y "$package"; then
+                export DEBIAN_FRONTEND=noninteractive
+                if ! sudo apt-get update -qq && sudo apt-get install -y -qq "$package"; then
                     log_error "Failed to install $package with apt"
                     return 1
                 fi

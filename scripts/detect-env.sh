@@ -91,7 +91,7 @@ detect_environment() {
     # Check for Docker container (during build or runtime)
     elif [[ -f /.dockerenv ]] || [[ -f /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup 2>/dev/null; then
         # If we're in a DevContainer build context, prefer devcontainer mode
-        if [[ -n "$DEBIAN_FRONTEND" ]] || [[ "$USER" == "vscode" ]]; then
+        if [[ -n "$DEBIAN_FRONTEND" ]] || [[ "$USER" == "vscode" ]] || [[ -d "/workspaces" ]] || [[ -d "/workspace" ]]; then
             DOTFILES_ENVIRONMENT="devcontainer"
         else
             DOTFILES_ENVIRONMENT="docker"

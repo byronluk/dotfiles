@@ -77,6 +77,14 @@ install_oh_my_zsh() {
     export RUNZSH=no
     export KEEP_ZSHRC=yes
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    
+    # Verify installation
+    if [[ -d "$HOME/.oh-my-zsh" ]]; then
+        log_success "Oh My Zsh installed successfully"
+    else
+        log_error "Oh My Zsh installation failed"
+        return 1
+    fi
 }
 
 # Install Powerlevel10k theme
@@ -88,30 +96,54 @@ install_powerlevel10k() {
         return
     fi
     
-    log "Installing Powerlevel10k..."
+    log "Installing Powerlevel10k to $theme_dir..."
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$theme_dir"
+    
+    # Verify installation
+    if [[ -d "$theme_dir" ]]; then
+        log_success "Powerlevel10k installed successfully"
+    else
+        log_error "Powerlevel10k installation failed"
+        return 1
+    fi
 }
 
 # Install Zsh plugins
 install_zsh_plugins() {
     local custom_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
     
+    log "Installing Zsh plugins to $custom_dir/plugins/"
+    
     # zsh-autosuggestions
     if [[ ! -d "$custom_dir/plugins/zsh-autosuggestions" ]]; then
         log "Installing zsh-autosuggestions..."
         git clone https://github.com/zsh-users/zsh-autosuggestions "$custom_dir/plugins/zsh-autosuggestions"
+    else
+        log "zsh-autosuggestions already installed"
     fi
     
     # zsh-syntax-highlighting
     if [[ ! -d "$custom_dir/plugins/zsh-syntax-highlighting" ]]; then
         log "Installing zsh-syntax-highlighting..."
         git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$custom_dir/plugins/zsh-syntax-highlighting"
+    else
+        log "zsh-syntax-highlighting already installed"
     fi
     
     # history-substring-search
     if [[ ! -d "$custom_dir/plugins/history-substring-search" ]]; then
         log "Installing history-substring-search..."
         git clone https://github.com/zsh-users/zsh-history-substring-search "$custom_dir/plugins/history-substring-search"
+    else
+        log "history-substring-search already installed"
+    fi
+    
+    # Verify plugins
+    local plugins_count=$(ls -d "$custom_dir/plugins/"* 2>/dev/null | wc -l)
+    if [[ $plugins_count -gt 1 ]]; then
+        log_success "Zsh plugins installed successfully ($plugins_count plugins)"
+    else
+        log_error "Zsh plugins installation may have failed"
     fi
 }
 

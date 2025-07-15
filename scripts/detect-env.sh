@@ -88,9 +88,14 @@ detect_environment() {
     # Check for DevContainer
     if [[ -n "$REMOTE_CONTAINERS" ]] || [[ -n "$CODESPACES" ]] || [[ -f "/workspaces/.codespaces/shared/environment-variables" ]]; then
         DOTFILES_ENVIRONMENT="devcontainer"
-    # Check for Docker container
+    # Check for Docker container (during build or runtime)
     elif [[ -f /.dockerenv ]] || [[ -f /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup 2>/dev/null; then
-        DOTFILES_ENVIRONMENT="docker"
+        # If we're in a DevContainer build context, prefer devcontainer mode
+        if [[ -n "$DEBIAN_FRONTEND" ]] || [[ "$USER" == "vscode" ]]; then
+            DOTFILES_ENVIRONMENT="devcontainer"
+        else
+            DOTFILES_ENVIRONMENT="docker"
+        fi
     # Check for CI environment
     elif [[ -n "$CI" ]] || [[ -n "$GITHUB_ACTIONS" ]] || [[ -n "$GITLAB_CI" ]] || [[ -n "$JENKINS_URL" ]] || [[ -n "$TRAVIS" ]]; then
         DOTFILES_ENVIRONMENT="ci"

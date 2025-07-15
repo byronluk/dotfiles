@@ -162,6 +162,10 @@ setup_dotfiles_repo() {
         log "Cloning dotfiles repository..."
         git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
         cd "$DOTFILES_DIR"
+        # Ensure proper ownership in container environments
+        if [[ "$USER" != "root" ]]; then
+            chown -R "$USER:$USER" "$DOTFILES_DIR" 2>/dev/null || true
+        fi
     fi
 }
 

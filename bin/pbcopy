@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Adaptive pbcopy replacement for containers
+# Supports OSC 52 escape sequences with fallbacks
+
+# Configuration
+MAX_OSC52_SIZE=$((200 * 1024))  # 200KB raw data limit for OSC 52
+CHUNK_SIZE=60000                # Base64 chars per chunk for large payloads
+
+# Read all input
+data=$(cat)
+data_size=${#data}
+
+# Function: Send OSC 52 escape sequence
+send_osc52() {
+    local b64_data="$1"
+    local use_chunks="$2"
+    
+    if [ "$use_chunks" = "true" ]; then
+        # Send in chunks for very large data
+        local total=${#b64_data}
+        local offset=0
+        while [ $offset -lt $total ]; do
+            local chunk="${b64_data:offset:CHUNK_SIZE}"
+            if [ -n "${TMUX:-}" ]; then
+                printf "\ePtmux;\e\e]52;c;%s\a\e\\" "$chunk"
+            else
+                printf "\e]52;c;%s\a" "$chunk"
+            fi
+            offset=$((offset + CHUNK_SIZE))
+            sleep 0.01  # Small delay for terminal processing
+        done
+    else
+        # Send as single sequence
+        if [ -n "${TMUX:-}" ]; then
+            printf "\ePtmux;\e\e]52;c;%s\a\e\\" "$b64_data"
+        else
+            printf "\e]52;c;%s\a" "$b64_data"
+        fi
+    fi
+}
+
+# Function: Try OSC 52 method
+try_osc52() {
+    # Check if we're in a terminal that likely supports OSC 52
+    if [ ! -t 1 ]; then
+        return 1
+    fi
+    
+    # Base64 encode the data
+    local b64_data
+    b64_data=$(printf "%s" "$data" | base64 | tr -d '\n')
+    
+    # Determine if we need chunking
+    local use_chunks="false"
+    if [ $data_size -gt $MAX_OSC52_SIZE ]; then
+        echo "Warning: Large clipboard data ($data_size bytes). Using chunked transfer." >&2
+        use_chunks="true"
+    fi
+    
+    send_osc52 "$b64_data" "$use_chunks"
+    return 0
+}
+
+# Function: Try xclip fallback
+try_xclip() {
+    if command -v xclip >/dev/null 2>&1; then
+        printf "%s" "$data" | xclip -selection clipboard
+        return 0
+    fi
+    return 1
+}
+
+# Function: Write to temp file as last resort
+write_temp_file() {
+    local temp_file="/tmp/pbcopy_$$.txt"
+    printf "%s" "$data" > "$temp_file"
+    echo "Clipboard data saved to: $temp_file" >&2
+    echo "Use 'cat $temp_file' to access the content." >&2
+    return 0
+}
+
+# Main execution: try methods in order of preference
+if try_osc52; then
+    # Success with OSC 52
+    exit 0
+elif try_xclip; then
+    echo "Used xclip fallback for clipboard." >&2
+    exit 0
+else
+    echo "OSC 52 and xclip unavailable. Falling back to temp file." >&2
+    write_temp_file
+    exit 0
+fi

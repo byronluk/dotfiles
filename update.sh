@@ -124,8 +124,8 @@ update_dotfiles() {
 reinstall_dotfiles() {
     log "Reinstalling dotfiles..."
     
-    # Run the installation script
-    "$DOTFILES_DIR/install.sh" --mode development --quiet
+    # Run the installation script with full setup
+    "$DOTFILES_DIR/install.sh" --mode full --quiet
     
     log_success "Dotfiles reinstalled successfully"
 }

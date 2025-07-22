@@ -34,10 +34,10 @@ curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh |
 - **Python management** with UV package manager
 - **SSH agent forwarding** for DevContainers
 
-### 🎯 **Installation Modes**
-- **Minimal**: Essential shell config and git setup
-- **Development**: Full shell setup with dev tools (default for DevContainers)
-- **Full**: Complete environment with all packages (default for bare metal)
+### 🎯 **Installation Options**
+- **Package-based**: Select specific packages (shell, dev-tools, system-tools, git-config, ssh-config)
+- **Minimal**: Essential packages without git/SSH (shell + dev-tools + system-tools)
+- **Full**: Complete environment with all packages (includes git/SSH configuration)
 
 ## 🛠️ Installation Options
 
@@ -49,17 +49,17 @@ curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh |
 
 ### Custom Installation
 ```bash
-# Install in development mode
-curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode development
+# Install specific packages (Genesis containers)
+curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --packages shell,dev-tools
 
-# Install with custom git configuration
-curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --name "Your Name" --email "your.email@example.com"
+# Install full setup with custom git configuration
+curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode full --name "Your Name" --email "your.email@example.com"
 
-# Install minimal configuration only
-curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode minimal --skip-packages
+# Install minimal setup (everything except git/SSH)
+curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode minimal
 
 # Quiet installation (for automation)
-curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --quiet
+curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --packages shell,dev-tools --quiet
 ```
 
 ### Manual Installation
@@ -69,7 +69,7 @@ git clone https://github.com/byronluk/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 
 # Run installer
-./install.sh --mode development
+./install.sh --mode full
 ```
 
 ## 🔄 Update Management
@@ -98,7 +98,7 @@ dotfiles
 # Manual update
 cd ~/.dotfiles
 git pull origin main
-./install.sh --mode development --quiet
+./install.sh --mode full --quiet
 ```
 
 ## 📚 Command Reference
@@ -109,15 +109,20 @@ git pull origin main
 
 OPTIONS:
     -h, --help              Show help message
-    -m, --mode MODE         Installation mode (minimal, development, full)
+    -m, --mode MODE         Installation mode (minimal, full)
+    -p, --packages LIST     Comma-separated list of packages to install
     -d, --dir DIR           Installation directory (default: ~/.dotfiles)
     -r, --repo URL          Git repository URL
     -n, --name NAME         Git user name
     -e, --email EMAIL       Git user email
-    --skip-packages         Skip package installation
-    --skip-shell            Skip shell setup
-    --skip-git              Skip git configuration
     -q, --quiet             Suppress output
+
+PACKAGES:
+    shell         zsh + Oh My Zsh + Powerlevel10k + plugins
+    dev-tools     fzf, glow, jq, gh, uv
+    system-tools  htop, tree, wget, rsync
+    git-config    Git configuration
+    ssh-config    SSH configuration
 ```
 
 ### Update Script Options
@@ -136,12 +141,10 @@ OPTIONS:
 You can customize the installation using environment variables:
 
 ```bash
-export DOTFILES_MODE=development
+export DOTFILES_MODE=full
+export DOTFILES_PACKAGES="shell,dev-tools,git-config"
 export DOTFILES_GIT_NAME="Your Name"
 export DOTFILES_GIT_EMAIL="your.email@example.com"
-export DOTFILES_SKIP_PACKAGES=true
-export DOTFILES_SKIP_SHELL=false
-export DOTFILES_SKIP_GIT=false
 export DOTFILES_QUIET=true
 ```
 
@@ -161,7 +164,7 @@ Add to your `devcontainer.json`:
 
 ```json
 {
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode development --quiet",
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode full --quiet",
   "remoteEnv": {
     "SSH_AUTH_SOCK": "/tmp/ssh-agent.sock"
   },
@@ -190,14 +193,14 @@ This repository contains no sensitive information:
 
 ### Test in Docker
 ```bash
-# Test Ubuntu container
+# Test Ubuntu container with Genesis setup
 docker run -it ubuntu:22.04 bash -c "
     apt-get update && apt-get install -y curl git
-    curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode minimal --quiet
+    curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --packages shell,dev-tools --quiet
     zsh
 "
 
-# Test Alpine container
+# Test Alpine container with minimal setup
 docker run -it alpine:latest sh -c "
     apk add --no-cache curl git bash
     curl -fsSL https://raw.githubusercontent.com/byronluk/dotfiles/main/install.sh | bash -s -- --mode minimal --quiet
@@ -205,25 +208,33 @@ docker run -it alpine:latest sh -c "
 "
 ```
 
-## 🎯 Installation Modes Explained
+## 🎯 Package-Based Installation System
 
-### **Minimal Mode**
-- Essential shell configuration
-- Basic git setup
-- Minimal package installation
-- Perfect for CI/CD environments
+### **Individual Packages**
+- **shell**: zsh + Oh My Zsh + Powerlevel10k + plugins
+- **dev-tools**: fzf, glow, jq, gh, uv (essential development tools)
+- **system-tools**: htop, tree, wget, rsync (system utilities)
+- **git-config**: Git user configuration and SSH setup
+- **ssh-config**: SSH agent forwarding and key management
 
-### **Development Mode** (Default for DevContainers)
-- Full shell setup with Oh My Zsh
-- Developer tools (fzf, jq, gh, glow)
-- SSH agent forwarding
-- Optimized for development workflows
+### **Package Groups**
+- **Minimal Mode**: shell + dev-tools + system-tools (everything except git/SSH)
+- **Full Mode**: All packages (shell + dev-tools + system-tools + git-config + ssh-config)
 
-### **Full Mode** (Default for bare metal)
-- Complete environment setup
-- All development tools
-- Additional utilities (htop, tree, wget, rsync)
-- Maximum functionality
+### **Usage Examples**
+```bash
+# Genesis containers (CLI tools only)
+--packages shell,dev-tools
+
+# DevContainers (full development setup)
+--mode full
+
+# Custom selection
+--packages shell,dev-tools,git-config
+
+# CI/CD environments
+--packages shell
+```
 
 ## 🧪 Testing
 

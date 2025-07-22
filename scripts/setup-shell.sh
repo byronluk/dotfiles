@@ -163,10 +163,8 @@ setup_shell_configs() {
     # Copy .zshrc
     cp "$dotfiles_dir/shell/.zshrc" "$HOME/.zshrc"
     
-    # Copy .p10k.zsh only for non-minimal modes
-    if [[ "$DOTFILES_MODE" != "minimal" ]]; then
-        cp "$dotfiles_dir/shell/.p10k.zsh" "$HOME/.p10k.zsh"
-    fi
+    # Copy .p10k.zsh
+    cp "$dotfiles_dir/shell/.p10k.zsh" "$HOME/.p10k.zsh"
     
     # Setup .local/bin directory and env script
     mkdir -p "$HOME/.local/bin"
@@ -229,107 +227,33 @@ set_default_shell() {
     fi
 }
 
-# Create minimal shell setup for CI/Docker environments
-setup_minimal_shell() {
-    local dotfiles_dir="$1"
-    
-    log "Setting up minimal shell configuration..."
-    
-    # Create a minimal .zshrc
-    cat > "$HOME/.zshrc" << 'EOF'
-# Minimal Zsh configuration for containers/CI
-export HISTFILE=~/.zsh_history
-export HISTSIZE=1000
-export SAVEHIST=1000
-
-# Basic options
-setopt SHARE_HISTORY
-setopt HIST_IGNORE_DUPS
-setopt AUTO_CD
-setopt AUTO_PUSHD
-
-# Simple prompt
-PROMPT='%n@%m:%~%# '
-
-# Basic aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
-alias ..='cd ..'
-alias ...='cd ../..'
-
-# Git aliases
-alias gs='git status'
-alias ga='git add'
-alias gc='git commit'
-alias gp='git push'
-alias gl='git pull'
-
-# Agent-friendly aliases
-alias rm='rm -f'
-alias cp='cp -f'
-alias mv='mv -f'
-alias pip='pip --quiet'
-alias git='git -c advice.detachedHead=false'
-
-# Load local configurations
-[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
-EOF
-    
-    # Setup PATH management
-    mkdir -p "$HOME/.local/bin"
-    cp "$dotfiles_dir/bin/env" "$HOME/.local/bin/env"
-    chmod +x "$HOME/.local/bin/env"
-    
-    # Create minimal local config
-    if [[ ! -f "$HOME/.zshrc.local" ]]; then
-        echo "# Local Zsh configuration for container" > "$HOME/.zshrc.local"
-    fi
-}
 
 # Main setup function
 setup_shell() {
-    local mode="$1"
-    local dotfiles_dir="$2"
+    local dotfiles_dir="$1"
     
-    log "Setting up shell for mode: $mode"
+    log "Setting up shell package"
     
-    case "$mode" in
-        "minimal")
-            install_zsh
-            setup_minimal_shell "$dotfiles_dir"
-            ;;
-        "development"|"full")
-            install_zsh
-            install_oh_my_zsh
-            install_powerlevel10k
-            install_zsh_plugins
-            setup_shell_configs "$dotfiles_dir"
-            ;;
-        *)
-            log_error "Unknown shell setup mode: $mode"
-            exit 1
-            ;;
-    esac
+    install_zsh
+    install_oh_my_zsh
+    install_powerlevel10k
+    install_zsh_plugins
+    setup_shell_configs "$dotfiles_dir"
     
     # Try to set as default shell for non-container environments
     if ! is_docker && ! is_ci; then
         set_default_shell
     fi
     
-    log_success "Shell setup complete for mode: $mode"
+    log_success "Shell setup complete"
 }
 
 # Run if script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     detect_environment_all
     
-    # Default to development mode if not specified
-    mode="${1:-$DOTFILES_MODE}"
-    [[ -z "$mode" ]] && mode="development"
-    
     # Default dotfiles directory
-    dotfiles_dir="${2:-$(dirname "$SCRIPT_DIR")}"
+    dotfiles_dir="${1:-$(dirname "$SCRIPT_DIR")}"
     
-    setup_shell "$mode" "$dotfiles_dir"
+    setup_shell "$dotfiles_dir"
 fi

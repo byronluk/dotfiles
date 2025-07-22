@@ -119,7 +119,7 @@ detect_user_context() {
     fi
 }
 
-# Determine installation mode
+# Determine installation mode (legacy - kept for compatibility)
 determine_mode() {
     # Allow override via environment variable
     if [[ -n "$DOTFILES_MODE" ]]; then
@@ -128,7 +128,7 @@ determine_mode() {
     
     case "$DOTFILES_ENVIRONMENT" in
         "devcontainer")
-            DOTFILES_MODE="development"
+            DOTFILES_MODE="minimal"
             ;;
         "docker")
             DOTFILES_MODE="minimal"
@@ -137,13 +137,13 @@ determine_mode() {
             DOTFILES_MODE="minimal"
             ;;
         "ssh")
-            DOTFILES_MODE="development"
+            DOTFILES_MODE="minimal"
             ;;
         "bare-metal")
             DOTFILES_MODE="full"
             ;;
         *)
-            DOTFILES_MODE="development"
+            DOTFILES_MODE="minimal"
             ;;
     esac
 }

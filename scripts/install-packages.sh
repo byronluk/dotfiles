@@ -334,47 +334,38 @@ install_uv() {
 
 # Main installation function
 install_packages() {
-    local mode="$1"
+    local package="$1"
     
-    log "Installing packages for mode: $mode"
+    log "Installing package: $package"
     
-    # Always install essential packages
-    log "Installing essential packages..."
-    install_packages_for_distro "${ESSENTIAL_PACKAGES[@]}"
-    
-    # Install UV for Python management
-    install_uv
-    
-    case "$mode" in
-        "minimal")
-            log "Minimal installation complete"
-            ;;
-        "development")
+    case "$package" in
+        "dev-tools")
+            log "Installing essential packages..."
+            install_packages_for_distro "${ESSENTIAL_PACKAGES[@]}"
             log "Installing development packages..."
             install_packages_for_distro "${DEVELOPMENT_PACKAGES[@]}"
+            # Install UV for Python management
+            install_uv
             ;;
-        "full")
-            log "Installing development packages..."
-            install_packages_for_distro "${DEVELOPMENT_PACKAGES[@]}"
-            log "Installing full packages..."
+        "system-tools")
+            log "Installing system packages..."
             install_packages_for_distro "${FULL_PACKAGES[@]}"
             ;;
         *)
-            log_error "Unknown installation mode: $mode"
+            log_error "Unknown package: $package"
             exit 1
             ;;
     esac
     
-    log_success "Package installation complete for mode: $mode"
+    log_success "Package installation complete for: $package"
 }
 
 # Run if script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     detect_environment_all
     
-    # Default to development mode if not specified
-    mode="${1:-$DOTFILES_MODE}"
-    [[ -z "$mode" ]] && mode="development"
+    # Default to dev-tools package if not specified
+    package="${1:-dev-tools}"
     
-    install_packages "$mode"
+    install_packages "$package"
 fi

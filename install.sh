@@ -19,11 +19,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_REPO="https://github.com/byronluk/dotfiles.git"
 DOTFILES_DIR="$HOME/.dotfiles"
 DOTFILES_MODE=""
+DOTFILES_PACKAGES=""
 DOTFILES_GIT_NAME=""
 DOTFILES_GIT_EMAIL=""
-DOTFILES_SKIP_PACKAGES="false"
-DOTFILES_SKIP_SHELL="false"
-DOTFILES_SKIP_GIT="false"
 DOTFILES_QUIET="false"
 
 # Logging functions
@@ -59,41 +57,46 @@ Usage: $0 [OPTIONS]
 
 OPTIONS:
     -h, --help              Show this help message
-    -m, --mode MODE         Installation mode (minimal, development, full)
+    -m, --mode MODE         Installation mode (minimal, full)
+    -p, --packages LIST     Comma-separated list of packages to install
     -d, --dir DIR           Installation directory (default: $HOME/.dotfiles)
     -r, --repo URL          Git repository URL
     -n, --name NAME         Git user name
     -e, --email EMAIL       Git user email
-    --skip-packages         Skip package installation
-    --skip-shell            Skip shell setup
-    --skip-git              Skip git configuration
     -q, --quiet             Suppress output
 
 MODES:
-    minimal       Essential shell config and git setup (default for CI/Docker)
-    development   Full shell setup with tools (default for DevContainers)
-    full          Complete environment setup (default for bare metal)
+    minimal       shell + dev-tools + system-tools
+    full          shell + dev-tools + system-tools + git-config + ssh-config
+
+PACKAGES:
+    shell         zsh + Oh My Zsh + Powerlevel10k + plugins
+    dev-tools     fzf, glow, jq, gh, uv
+    system-tools  htop, tree, wget, rsync
+    git-config    Git configuration
+    ssh-config    SSH configuration
 
 EXAMPLES:
-    # Basic installation (auto-detects environment)
-    $0
+    # Install minimal setup (everything except git/SSH)
+    $0 --mode minimal
 
-    # Install in development mode
-    $0 --mode development
+    # Install full setup
+    $0 --mode full
 
-    # Install with custom git configuration
-    $0 --name "John Doe" --email "john@example.com"
+    # Install specific packages
+    $0 --packages shell,dev-tools
 
-    # Install minimal configuration only
-    $0 --mode minimal --skip-packages
+    # Genesis container setup
+    $0 --packages shell,dev-tools
+
+    # Custom git configuration
+    $0 --mode full --name "John Doe" --email "john@example.com"
 
 ENVIRONMENT VARIABLES:
     DOTFILES_MODE           Override installation mode
+    DOTFILES_PACKAGES       Override package selection
     DOTFILES_GIT_NAME       Git user name
     DOTFILES_GIT_EMAIL      Git user email
-    DOTFILES_SKIP_PACKAGES  Skip package installation
-    DOTFILES_SKIP_SHELL     Skip shell setup
-    DOTFILES_SKIP_GIT       Skip git configuration
     DOTFILES_QUIET          Suppress output
 
 EOF
@@ -111,6 +114,10 @@ parse_args() {
                 DOTFILES_MODE="$2"
                 shift 2
                 ;;
+            -p|--packages)
+                DOTFILES_PACKAGES="$2"
+                shift 2
+                ;;
             -d|--dir)
                 DOTFILES_DIR="$2"
                 shift 2
@@ -126,18 +133,6 @@ parse_args() {
             -e|--email)
                 DOTFILES_GIT_EMAIL="$2"
                 shift 2
-                ;;
-            --skip-packages)
-                DOTFILES_SKIP_PACKAGES="true"
-                shift
-                ;;
-            --skip-shell)
-                DOTFILES_SKIP_SHELL="true"
-                shift
-                ;;
-            --skip-git)
-                DOTFILES_SKIP_GIT="true"
-                shift
                 ;;
             -q|--quiet)
                 DOTFILES_QUIET="true"
@@ -169,12 +164,46 @@ setup_dotfiles_repo() {
     fi
 }
 
-# Setup git configuration
-setup_git_config() {
-    if [[ "$DOTFILES_SKIP_GIT" == "true" ]]; then
-        log "Skipping git configuration"
+# Determine packages to install
+determine_packages() {
+    # If packages explicitly specified, use them
+    if [[ -n "$DOTFILES_PACKAGES" ]]; then
         return
     fi
+    
+    # If mode specified, convert to packages
+    case "$DOTFILES_MODE" in
+        "minimal")
+            DOTFILES_PACKAGES="shell,dev-tools,system-tools"
+            ;;
+        "full")
+            DOTFILES_PACKAGES="shell,dev-tools,system-tools,git-config,ssh-config"
+            ;;
+        "")
+            # Auto-detect based on environment
+            case "$DOTFILES_ENVIRONMENT" in
+                "devcontainer"|"docker")
+                    DOTFILES_PACKAGES="shell,dev-tools,system-tools"
+                    ;;
+                "ci")
+                    DOTFILES_PACKAGES="shell"
+                    ;;
+                *)
+                    DOTFILES_PACKAGES="shell,dev-tools,system-tools,git-config,ssh-config"
+                    ;;
+            esac
+            ;;
+        *)
+            log_error "Unknown mode: $DOTFILES_MODE"
+            exit 1
+            ;;
+    esac
+    
+    export DOTFILES_PACKAGES
+}
+
+# Setup git configuration
+setup_git_config() {
     
     # Use provided values or prompt for them
     if [[ -z "$DOTFILES_GIT_NAME" ]]; then
@@ -204,9 +233,6 @@ setup_git_config() {
 
 # Setup SSH configuration
 setup_ssh_config() {
-    if [[ "$DOTFILES_SKIP_GIT" == "true" ]]; then
-        return
-    fi
     
     log "Setting up SSH configuration..."
     
@@ -252,23 +278,38 @@ main() {
         print_detection_results
     fi
     
-    log_header "📦 Installing packages"
-    if [[ "$DOTFILES_SKIP_PACKAGES" == "true" ]]; then
-        log "Skipping package installation"
-    else
-        "$DOTFILES_DIR/scripts/install-packages.sh" "$DOTFILES_MODE"
-    fi
+    # Determine which packages to install
+    determine_packages
     
-    log_header "🐚 Setting up shell"
-    if [[ "$DOTFILES_SKIP_SHELL" == "true" ]]; then
-        log "Skipping shell setup"
-    else
-        "$DOTFILES_DIR/scripts/setup-shell.sh" "$DOTFILES_MODE" "$DOTFILES_DIR"
-    fi
+    log "Installing packages: $DOTFILES_PACKAGES"
     
-    log_header "🔧 Configuring git and SSH"
-    setup_git_config
-    setup_ssh_config
+    # Convert comma-separated packages to array
+    IFS=',' read -ra PACKAGE_ARRAY <<< "$DOTFILES_PACKAGES"
+    
+    # Install each package
+    for package in "${PACKAGE_ARRAY[@]}"; do
+        case "$package" in
+            "shell")
+                log_header "🐚 Setting up shell"
+                "$DOTFILES_DIR/scripts/setup-shell.sh" "$DOTFILES_DIR"
+                ;;
+            "dev-tools"|"system-tools")
+                log_header "📦 Installing $package"
+                "$DOTFILES_DIR/scripts/install-packages.sh" "$package"
+                ;;
+            "git-config")
+                log_header "🔧 Configuring git"
+                setup_git_config
+                ;;
+            "ssh-config")
+                log_header "🔑 Configuring SSH"
+                setup_ssh_config
+                ;;
+            *)
+                log_error "Unknown package: $package"
+                ;;
+        esac
+    done
     
     log_header "✅ Installation complete!"
     log_success "Dotfiles have been installed successfully!"
@@ -278,7 +319,8 @@ main() {
         echo ""
         echo -e "${CYAN}Next steps:${NC}"
         
-        if [[ "$DOTFILES_MODE" != "minimal" ]]; then
+        # Check if shell package was installed
+        if [[ "$DOTFILES_PACKAGES" == *"shell"* ]]; then
             echo -e "  1. ${YELLOW}Restart your terminal${NC} or run: ${GREEN}source ~/.zshrc${NC}"
             echo -e "  2. ${YELLOW}Configure Powerlevel10k${NC} by running: ${GREEN}p10k configure${NC}"
         else

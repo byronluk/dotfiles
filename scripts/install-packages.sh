@@ -57,12 +57,18 @@ install_package() {
     local package="$1"
     local package_manager="$2"
     
+    # Determine if we need sudo
+    local SUDO_CMD=""
+    if [[ "$DOTFILES_USER_CONTEXT" != "root" ]] && command -v sudo >/dev/null 2>&1; then
+        SUDO_CMD="sudo"
+    fi
+    
     case "$package_manager" in
         "apt")
             if ! dpkg -l | grep -q "^ii  $package "; then
                 log "Installing $package with apt..."
                 export DEBIAN_FRONTEND=noninteractive
-                if ! sudo apt-get update -qq && sudo apt-get install -y -qq "$package"; then
+                if ! $SUDO_CMD apt-get update -qq && $SUDO_CMD apt-get install -y -qq "$package"; then
                     log_error "Failed to install $package with apt"
                     return 1
                 fi
@@ -73,7 +79,7 @@ install_package() {
         "apk")
             if ! apk info -e "$package" >/dev/null 2>&1; then
                 log "Installing $package with apk..."
-                if ! sudo apk add "$package"; then
+                if ! $SUDO_CMD apk add "$package"; then
                     log_error "Failed to install $package with apk"
                     return 1
                 fi
@@ -84,7 +90,7 @@ install_package() {
         "yum"|"dnf")
             if ! rpm -qa | grep -q "^$package"; then
                 log "Installing $package with $package_manager..."
-                if ! sudo "$package_manager" install -y "$package"; then
+                if ! $SUDO_CMD "$package_manager" install -y "$package"; then
                     log_error "Failed to install $package with $package_manager"
                     return 1
                 fi
@@ -95,7 +101,7 @@ install_package() {
         "pacman")
             if ! pacman -Q "$package" >/dev/null 2>&1; then
                 log "Installing $package with pacman..."
-                if ! sudo pacman -S --noconfirm "$package"; then
+                if ! $SUDO_CMD pacman -S --noconfirm "$package"; then
                     log_error "Failed to install $package with pacman"
                     return 1
                 fi
@@ -106,7 +112,7 @@ install_package() {
         "zypper")
             if ! zypper se -i "$package" >/dev/null 2>&1; then
                 log "Installing $package with zypper..."
-                if ! sudo zypper install -y "$package"; then
+                if ! $SUDO_CMD zypper install -y "$package"; then
                     log_error "Failed to install $package with zypper"
                     return 1
                 fi
@@ -179,34 +185,40 @@ install_github_cli() {
     
     log "Installing GitHub CLI..."
     
+    # Determine if we need sudo
+    local SUDO_CMD=""
+    if [[ "$DOTFILES_USER_CONTEXT" != "root" ]] && command -v sudo >/dev/null 2>&1; then
+        SUDO_CMD="sudo"
+    fi
+    
     case "$DOTFILES_PACKAGE_MANAGER" in
         "apt")
-            if ! curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg; then
+            if ! curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | $SUDO_CMD dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg; then
                 log_error "Failed to add GitHub CLI key"
                 return 1
             fi
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-            if ! sudo apt-get update -qq && sudo apt-get install -y gh; then
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | $SUDO_CMD tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            if ! $SUDO_CMD apt-get update -qq && $SUDO_CMD apt-get install -y gh; then
                 log_error "Failed to install GitHub CLI"
                 return 1
             fi
             ;;
         "apk")
-            if ! sudo apk add github-cli; then
+            if ! $SUDO_CMD apk add github-cli; then
                 log_error "Failed to install GitHub CLI"
                 return 1
             fi
             ;;
         "yum"|"dnf")
-            if ! sudo "$DOTFILES_PACKAGE_MANAGER" install -y 'dnf-command(config-manager)'; then
+            if ! $SUDO_CMD "$DOTFILES_PACKAGE_MANAGER" install -y 'dnf-command(config-manager)'; then
                 log_error "Failed to install config-manager"
                 return 1
             fi
-            if ! sudo "$DOTFILES_PACKAGE_MANAGER" config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo; then
+            if ! $SUDO_CMD "$DOTFILES_PACKAGE_MANAGER" config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo; then
                 log_error "Failed to add GitHub CLI repo"
                 return 1
             fi
-            if ! sudo "$DOTFILES_PACKAGE_MANAGER" install -y gh; then
+            if ! $SUDO_CMD "$DOTFILES_PACKAGE_MANAGER" install -y gh; then
                 log_error "Failed to install GitHub CLI"
                 return 1
             fi
@@ -233,15 +245,21 @@ install_glow() {
     
     log "Installing Glow..."
     
+    # Determine if we need sudo
+    local SUDO_CMD=""
+    if [[ "$DOTFILES_USER_CONTEXT" != "root" ]] && command -v sudo >/dev/null 2>&1; then
+        SUDO_CMD="sudo"
+    fi
+    
     case "$DOTFILES_PACKAGE_MANAGER" in
         "apt")
-            sudo mkdir -p /etc/apt/keyrings
-            curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-            echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
-            sudo apt-get update -qq && sudo apt-get install -y glow
+            $SUDO_CMD mkdir -p /etc/apt/keyrings
+            curl -fsSL https://repo.charm.sh/apt/gpg.key | $SUDO_CMD gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+            echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | $SUDO_CMD tee /etc/apt/sources.list.d/charm.list
+            $SUDO_CMD apt-get update -qq && $SUDO_CMD apt-get install -y glow
             ;;
         "apk")
-            sudo apk add glow
+            $SUDO_CMD apk add glow
             ;;
         "yum"|"dnf")
             echo '[charm]
@@ -249,8 +267,8 @@ name=Charm
 baseurl=https://repo.charm.sh/yum/
 enabled=1
 gpgcheck=1
-gpgkey=https://repo.charm.sh/yum/gpg.key' | sudo tee /etc/yum.repos.d/charm.repo
-            sudo "$DOTFILES_PACKAGE_MANAGER" install -y glow
+gpgkey=https://repo.charm.sh/yum/gpg.key' | $SUDO_CMD tee /etc/yum.repos.d/charm.repo
+            $SUDO_CMD "$DOTFILES_PACKAGE_MANAGER" install -y glow
             ;;
         "brew")
             brew install glow
@@ -270,27 +288,33 @@ install_fzf() {
     
     log "Installing FZF..."
     
+    # Determine if we need sudo
+    local SUDO_CMD=""
+    if [[ "$DOTFILES_USER_CONTEXT" != "root" ]] && command -v sudo >/dev/null 2>&1; then
+        SUDO_CMD="sudo"
+    fi
+    
     case "$DOTFILES_PACKAGE_MANAGER" in
         "apt")
-            if ! sudo apt-get update -qq && sudo apt-get install -y fzf; then
+            if ! $SUDO_CMD apt-get update -qq && $SUDO_CMD apt-get install -y fzf; then
                 log_error "Failed to install FZF"
                 return 1
             fi
             ;;
         "apk")
-            if ! sudo apk add fzf; then
+            if ! $SUDO_CMD apk add fzf; then
                 log_error "Failed to install FZF"
                 return 1
             fi
             ;;
         "yum"|"dnf")
-            if ! sudo "$DOTFILES_PACKAGE_MANAGER" install -y fzf; then
+            if ! $SUDO_CMD "$DOTFILES_PACKAGE_MANAGER" install -y fzf; then
                 log_error "Failed to install FZF"
                 return 1
             fi
             ;;
         "pacman")
-            if ! sudo pacman -S --noconfirm fzf; then
+            if ! $SUDO_CMD pacman -S --noconfirm fzf; then
                 log_error "Failed to install FZF"
                 return 1
             fi

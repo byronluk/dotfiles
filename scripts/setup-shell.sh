@@ -38,21 +38,27 @@ install_zsh() {
     
     log "Installing Zsh..."
     
+    # Determine if we need sudo
+    local SUDO_CMD=""
+    if [[ "$DOTFILES_USER_CONTEXT" != "root" ]] && command -v sudo >/dev/null 2>&1; then
+        SUDO_CMD="sudo"
+    fi
+    
     case "$DOTFILES_PACKAGE_MANAGER" in
         "apt")
-            sudo apt-get update -qq && sudo apt-get install -y zsh
+            $SUDO_CMD apt-get update -qq && $SUDO_CMD apt-get install -y zsh
             ;;
         "apk")
-            sudo apk add zsh
+            $SUDO_CMD apk add zsh
             ;;
         "yum"|"dnf")
-            sudo "$DOTFILES_PACKAGE_MANAGER" install -y zsh
+            $SUDO_CMD "$DOTFILES_PACKAGE_MANAGER" install -y zsh
             ;;
         "pacman")
-            sudo pacman -S --noconfirm zsh
+            $SUDO_CMD pacman -S --noconfirm zsh
             ;;
         "zypper")
-            sudo zypper install -y zsh
+            $SUDO_CMD zypper install -y zsh
             ;;
         "brew")
             brew install zsh

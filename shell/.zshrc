@@ -62,6 +62,11 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
+# FZF configuration - set base path for system installation
+if [[ -d "/usr/share/fzf" ]]; then
+  export FZF_BASE="/usr/share/fzf"
+fi
+
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'

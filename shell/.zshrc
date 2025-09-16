@@ -5,6 +5,16 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+# Skip almost everything when not interactive (e.g., VS Code env probes)
+[[ $- != *i* ]] && return
+
+# If running inside a container/Dev Container, tone things down
+if [[ -f "/.dockerenv" || -n "$VSCODE_IPC_HOOK_CLI" || -n "$REMOTE_CONTAINERS" ]]; then
+  export ZSH_DISABLE_COMPFIX=true
+  export DISABLE_AUTO_UPDATE=true
+  export DOTFILES_DEVCONTAINER=1
+fi
+
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -16,6 +26,8 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
+
+# Base plugins for all environments
 plugins=(
   git
   docker
@@ -27,12 +39,17 @@ plugins=(
   fzf
   sudo
   colored-man-pages
-  ssh-agent
   command-not-found
   zsh-autosuggestions
   zsh-syntax-highlighting
   history-substring-search
 )
+
+# Add ssh-agent plugin only for local sessions (not SSH connections)
+# SSH agent forwarding works better without the plugin in remote sessions
+if [[ -z "$SSH_CONNECTION" ]]; then
+  plugins+=(ssh-agent)
+fi
 
 # Agent detection - only activate minimal mode for actual agents  
 if [[ -n "$npm_config_yes" ]] || [[ -n "$CI" ]] || [[ "$-" != *i* ]]; then
@@ -63,7 +80,11 @@ source $ZSH/oh-my-zsh.sh
 # User configuration
 
 # FZF configuration - set base path for system installation
-if [[ -d "/usr/share/fzf" ]]; then
+if [[ -d "/opt/homebrew/opt/fzf" ]]; then
+  export FZF_BASE="/opt/homebrew/opt/fzf"
+elif [[ -d "/usr/local/opt/fzf" ]]; then
+  export FZF_BASE="/usr/local/opt/fzf"
+elif [[ -d "/usr/share/fzf" ]]; then
   export FZF_BASE="/usr/share/fzf"
 fi
 

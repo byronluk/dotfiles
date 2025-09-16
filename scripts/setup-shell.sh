@@ -246,8 +246,8 @@ setup_shell() {
     install_zsh_plugins
     setup_shell_configs "$dotfiles_dir"
     
-    # Try to set as default shell for non-container environments
-    if ! is_docker && ! is_ci; then
+    # Try to set as default shell only outside containers/CI
+    if ! is_docker && ! is_ci && ! is_devcontainer; then
         set_default_shell
     fi
     

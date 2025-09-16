@@ -267,6 +267,13 @@ main() {
     # Source environment detection
     source "$DOTFILES_DIR/scripts/detect-env.sh"
     detect_environment_all
+
+    # If running in a container/devcontainer, default to minimal and quiet
+    if is_devcontainer || is_docker; then
+        export DOTFILES_MODE="${DOTFILES_MODE:-minimal}"
+        export DOTFILES_QUIET="${DOTFILES_QUIET:-true}"
+        export DOTFILES_DEVCONTAINER=1
+    fi
     
     # Override mode if specified
     if [[ -n "$DOTFILES_MODE" ]]; then
